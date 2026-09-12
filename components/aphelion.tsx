@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, Download, Menu, MoveUpRight, Pause, Play, Plus } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Check, Download, Menu, MoveUpRight, Pause, Play, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -60,7 +60,11 @@ export default function Aphelion() {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setSystemMotionOff(query.matches);
     update(); query.addEventListener("change", update);
-    try { setMotionOff(localStorage.getItem("aphelion-reduce-motion") === "true"); } catch { /* Device preferences are optional. */ }
+    try {
+      // Restore the visitor's explicit preference after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMotionOff(localStorage.getItem("aphelion-reduce-motion") === "true");
+    } catch { /* Device preferences are optional. */ }
     return () => query.removeEventListener("change", update);
   }, []);
 
