@@ -1,0 +1,143 @@
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { asset } from "@/lib/journeys";
+
+type Props = { name: "departure" | "observatory"; section: string; reduced: boolean; idle?: boolean; };
+
+/**
+ * Keep the poster visible until the browser has decoded a playable first frame.
+ * Scroll-driven seeking begins only after that point, so opening the page never
+ * asks the decoder to jump backwards and forwards while it is still loading.
+ */
+export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
+  const video = useRef<HTMLVideoElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const retries = useRef(0);
+  const [near, setNear] = useState(idle);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const presentFrame = useCallback(() => {
+    const node = video.current;
+    const surface = canvas.current;
+    if (!node || !surface || node.readyState < 2 || !node.videoWidth || !node.videoHeight) return false;
+    if (surface.width !== node.videoWidth || surface.height !== node.videoHeight) {
+      surface.width = node.videoWidth;
+      surface.height = node.videoHeight;
+    }
+    const context = surface.getContext("2d", { alpha: false });
+    if (!context) return false;
+    context.drawImage(node, 0, 0, surface.width, surface.height);
+    surface.dataset.presentedTime = node.currentTime.toFixed(3);
+    setReady(true);
+    return true;
+  }, []);
+  useEffect(() => {
+    const node = video.current;
+    if (!node || !near || reduced) return;
+    setFailed(false);
+    let primed = false;
+    const detach = () => {
+      node.removeEventListener("loadeddata", prime);
+      node.removeEventListener("canplay", prime);
+    };
+    const prime = () => {
+      if (primed) return;
+      if (!presentFrame()) return;
+      primed = true;
+      retries.current = 0;
+      setFailed(false);
+      // Initialization is complete. Later `canplay` events can occur between
+      // seeks on a partially buffered film and must not repaint frame zero.
+      detach();
+    };
+    // Cached media can finish before React hydrates and attaches JSX event
+    // handlers. Inspect the decoder directly as well as listening for events.
+    node.addEventListener("loadeddata", prime);
+    node.addEventListener("canplay", prime);
+    if (node.readyState >= 2) prime();
+    else node.load();
+    return detach;
+  }, [near, reduced, presentFrame]);
+  useEffect(() => {
+    const node = video.current;
+    const host = node?.closest(section);
+    if (!node || !host || reduced) return;
+    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) setNear(true); }, { rootMargin: "2200px 0px" });
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [section, reduced]);
+  useEffect(() => {
+    const node = video.current;
+    const host = node?.closest(section);
+    if (!node || !host || !near || reduced || !ready) return;
+    let raf = 0, commitRaf = 0, desired = 0, displayed = node.currentTime || 0, active = false, last = 0, previous = performance.now();
+    let busy = false, disposed = false, seekWatchdog = 0;
+    const duration = () => Number.isFinite(node.duration) ? Math.max(0, node.duration - .05) : 0;
+    function seek() {
+      if (!node || busy || node.seeking || node.readyState < 2 || duration() === 0) return;
+      const next = Math.min(duration(), Math.max(0, Math.round(displayed * 30) / 30));
+      if (Math.abs(node.currentTime - next) > .02) {
+        busy = true;
+        node.currentTime = next;
+        // A suspended tab or a recovering decoder can occasionally lose a
+        // `seeked` event. Never let one lost event freeze every later frame.
+        window.clearTimeout(seekWatchdog);
+        seekWatchdog = window.setTimeout(() => {
+          if (disposed) return;
+          busy = false;
+          if (!node.seeking) presentFrame();
+          seek();
+        }, 650);
+      }
+    }
+    function commitFrame() {
+      window.clearTimeout(seekWatchdog);
+      cancelAnimationFrame(commitRaf);
+      // `seeked` is reliable for paused media across Chromium, WebKit and
+      // Firefox. Paint on the next display frame so the decoded image is ready.
+      commitRaf = requestAnimationFrame(() => {
+        if (disposed) return;
+        presentFrame();
+        if (canvas.current) canvas.current.dataset.presentedTime = node!.currentTime.toFixed(3);
+        busy = false;
+        seek();
+      });
+    }
+    function tick(time: number) {
+      if (!node || !host) return;
+      if (time - last > 15) {
+        const rect = host.getBoundingClientRect();
+        const progress = Math.max(0, Math.min(1, -rect.top / Math.max(1, rect.height - innerHeight)));
+        desired = progress * duration();
+        const elapsed = Math.min(80, time - previous); previous = time;
+        displayed += (desired - displayed) * (1 - Math.exp(-elapsed / 150));
+        if (Math.abs(desired - displayed) < .012) displayed = desired;
+        seek(); last = time;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    function sync() { cancelAnimationFrame(raf); if (active && !document.hidden) raf = requestAnimationFrame(tick); }
+    const observer = new IntersectionObserver(([entry]) => { active = entry.isIntersecting; sync(); });
+    observer.observe(host);
+    node.addEventListener("seeked", commitFrame);
+    node.addEventListener("canplay", seek);
+    node.addEventListener("loadedmetadata", seek);
+    document.addEventListener("visibilitychange", sync);
+    return () => { disposed = true; window.clearTimeout(seekWatchdog); cancelAnimationFrame(commitRaf); cancelAnimationFrame(raf); observer.disconnect(); node.removeEventListener("seeked", commitFrame); node.removeEventListener("canplay", seek); node.removeEventListener("loadedmetadata", seek); document.removeEventListener("visibilitychange", sync); node.pause(); };
+  }, [near, ready, reduced, section, presentFrame]);
+  return <div className={"scroll-film" + (ready && !failed && !reduced ? " film-ready" : "")}>
+    <img className="film-poster" src={asset(`/videos/${name}-poster.webp`)} alt="" width={1920} height={1080} fetchPriority={idle ? "high" : "auto"} />
+    <canvas ref={canvas} className="film-video" aria-hidden="true" />
+    <video ref={video} className="film-decoder" muted playsInline preload={near && !reduced ? "auto" : "none"} aria-hidden="true" tabIndex={-1}
+      onCanPlay={() => { setReady(true); setFailed(false); }} onError={(event) => {
+        const node = video.current;
+        // Ignore errors dispatched by an individual <source>. The browser may
+        // still have selected and decoded the other responsive source.
+        if (!node || event.target !== node || !node.error) return;
+        if (node && near && !reduced && retries.current < 2) { retries.current += 1; window.setTimeout(() => node.load(), 250 * retries.current); }
+        else setFailed(true);
+      }}>
+      {near && !reduced && <><source media="(max-width: 700px)" src={asset(`/videos/${name}-mobile.mp4`)} type="video/mp4" /><source src={asset(`/videos/${name}.mp4`)} type="video/mp4" /></>}
+    </video>
+  </div>;
+}

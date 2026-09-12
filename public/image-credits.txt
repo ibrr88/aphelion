@@ -1,0 +1,16 @@
+APHELION — IMAGE CREDITS
+
+Visual references: Rempus and Starmind (Dogan Ural), supplied by the user. The current hero and ascent use original Seedance 2.5 generated films, created through Magnific for Aphelion. Aphelion is not affiliated with SpaceX or the reference brands.
+
+Earth: NASA/Apollo 17, public domain.
+https://commons.wikimedia.org/wiki/File:The_Earth_seen_from_Apollo_17_with_transparent_background.png
+Moon: NASA/Galileo, public domain.
+https://commons.wikimedia.org/wiki/File:Full_moon.png
+Saturn: NASA/Voyager 2, public domain.
+https://commons.wikimedia.org/wiki/File:Saturnx.png
+Mars: ESA & MPS for OSIRIS Team MPS/UPD/LAM/IAA/RSSD/INTA/UPM/DASP/IDA.
+https://commons.wikimedia.org/wiki/File:OSIRIS_Mars_true_color.jpg
+CC BY-SA 3.0 IGO: https://creativecommons.org/licenses/by-sa/3.0/igo/
+Planet files resized and converted to WebP. Mars image remains available under the same license.
+
+Other Earth and observatory imagery: Seedream generated through Magnific for this project. See docs/ASSETS.md in the source.

@@ -1,0 +1,217 @@
+/* Film, scrolling, and horizontal orbital passages. */
+html.lenis { scroll-behavior:auto; }
+.hero-sequence { height:320svh; position:relative; }
+.hero-sequence .hero { position:sticky; top:0; height:100svh; min-height:650px; max-height:none; }
+.scroll-film,.film-video,.film-poster { position:absolute; inset:0; width:100%; height:100%; }
+.film-video,.film-poster { object-fit:cover; object-position:66% center; }
+.film-video { opacity:0; transition:opacity .5s; }
+.film-ready .film-video { opacity:1; }
+.film-decoder { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.hero-art .film-poster { animation:none; filter:none; transform:none; }
+.hero-art:after { background:linear-gradient(90deg,#010407af,transparent 72%),linear-gradient(180deg,#01040744,transparent 30%,#01040788); }
+.hero-content { max-width:1500px; padding-top:clamp(180px,25svh,270px); }
+.hero-content h1 { font-size:clamp(68px,8.9vw,148px); }
+.hero-coordinate { right:5%; bottom:18%; }
+.hero-passage-caption { position:absolute; left:6%; bottom:25%; opacity:0; pointer-events:none; }
+.hero-passage-caption>p:last-child { font-size:clamp(38px,5vw,80px); line-height:1.12; letter-spacing:-.05em; margin:18px 0; }
+.hero-passage-caption .eyebrow { color:#8bd7f9; }
+.hero-progress { position:absolute; bottom:0; left:0; width:100%; height:2px; background:#ffffff15; }
+.hero-progress>span { display:block; width:100%; height:100%; transform:scaleX(0); transform-origin:left; background:linear-gradient(90deg,#159ee8,#c9edff,#ff702a); }
+.ascent { height:300svh; }
+.ascent-shade { background:linear-gradient(90deg,#0105099c,transparent 75%),linear-gradient(180deg,#01050833,transparent 55%,#010508dd); }
+.ascent-heading h2 { max-width:700px; }
+.journey-scroll { background:#020507; position:relative; }
+.journey-stage { overflow:hidden; position:relative; isolation:isolate; }
+.journey-stage:after { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 65% 48%,#00426b18,transparent 58%); z-index:-1; }
+.star-field { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+.destination-header { position:absolute; left:6%; right:6%; top:36px; z-index:3; display:flex; justify-content:space-between; gap:20px; align-items:center; }
+.destination-header p { margin:0; color:#8bb2c9; }
+.destination-header a { display:flex; align-items:center; gap:14px; font-size:13px; color:#a2b6c4; min-height:40px; }
+.destination-panel { position:relative; min-height:800px; display:grid; grid-template-columns:42% 58%; align-items:center; padding:120px 6%; }
+.destination-copy { position:relative; z-index:2; }
+.destination-copy>.eyebrow { color:#8cbad6; gap:10px; font-size:12px; }
+.destination-copy>.eyebrow span { color:#668391; }
+.destination-copy h2 { font-size:clamp(70px,9vw,150px); font-weight:400; letter-spacing:-.075em; line-height:1.05; margin:30px 0; }
+.destination-poem { font-size:clamp(18px,1.7vw,26px); line-height:1.6; color:#b4c3ce; max-width:340px; }
+.destination-meta { display:flex; flex-direction:column; gap:8px; color:#6e98b1; font:12px/1.6 "IBM Plex Mono",monospace; margin:25px 0 35px; }
+.destination-cta { display:inline-flex; align-items:center; gap:40px; padding:17px 0; border-bottom:1px solid #49baf477; color:#e8f5ff; font-size:15px; }
+.destination-cta:hover { color:#ff8a4f; }
+.destination-visual { width:100%; height:100%; min-height:300px; display:grid; place-items:center; border:0; background:transparent; position:relative; }
+.destination-planet { width:100%; max-width:610px; aspect-ratio:1; display:grid; place-items:center; }
+.destination-planet img { width:100%; height:100%; object-fit:contain; mix-blend-mode:screen; filter:drop-shadow(-10px 0 20px #1176b520); }
+.world-lunar .destination-planet img,.world-mars .destination-planet img { clip-path:circle(48% at 50% 50%); }
+.world-lunar .destination-planet { width:76%; }
+.world-mars .destination-planet { width:83%; }
+.world-saturn .destination-planet { width:125%; max-width:760px; aspect-ratio:1.52; }
+.world-mars .destination-copy>.eyebrow,.world-mars .destination-meta { color:#c7896f; }
+.world-saturn .destination-copy>.eyebrow,.world-saturn .destination-meta { color:#c7bca0; }
+.destination-number { position:absolute; right:6%; top:100px; color:#7291a23d; font:13px "IBM Plex Mono",monospace; }
+.destination-bottom { position:relative; z-index:3; margin:0 6%; padding-bottom:28px; }
+.destination-bottom nav { display:flex; gap:34px; border-top:1px solid #9bbacf33; }
+.destination-bottom button { color:#91a6b4; display:flex; gap:10px; align-items:center; padding:20px 0; font-size:14px; position:relative; }
+.destination-bottom button>span { color:#5d8299; font:11px "IBM Plex Mono",monospace; }
+.destination-bottom button[aria-current="step"] { color:#f0f8ff; }
+.destination-bottom button:before { content:""; position:absolute; top:-1px; left:0; right:0; height:1px; background:#68cdfb; transform:scaleX(0); transform-origin:left; transition:transform .5s; }
+.destination-bottom button[aria-current="step"]:before { transform:scaleX(1); }
+.destination-disclosure { color:#5c7c8e; font:11px "IBM Plex Mono",monospace; letter-spacing:.04em; }
+
+/* A compact mechanical solar system introduces the perspective chapter. */
+.intro-orbits { width:clamp(210px,20vw,310px); height:clamp(210px,20vw,310px); margin-top:75px; transform:none; filter:drop-shadow(0 0 28px #078ccf2e); }
+.intro-orbit { position:absolute; inset:0; border:1px solid #49c9ff38; border-radius:50%; transform-origin:center; }
+.intro-orbit:nth-child(2) { inset:25px; border-color:#8cddff45; }
+.intro-orbit:nth-child(3) { inset:54px; border-color:#ff7a3a3d; }
+.intro-orbit:nth-child(4) { inset:82px; border-color:#dcf4ff4d; }
+.intro-orbit:before { content:""; position:absolute; inset:50% auto auto 50%; width:4px; height:4px; border-radius:50%; background:#d8f5ff; box-shadow:0 0 14px #73d3ff; transform:translate(-50%,-50%); }
+.intro-orbit>span { position:absolute; top:50%; right:-8px; width:17px; height:17px; transform:translateY(-50%); display:grid; place-items:center; }
+.intro-orbit:nth-child(2)>span { width:14px; height:14px; right:-7px; }
+.intro-orbit:nth-child(3)>span { width:12px; height:12px; right:-6px; }
+.intro-orbit:nth-child(4)>span { width:10px; height:10px; right:-5px; }
+.intro-orbit img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0 7px #9bdfff88); }
+.intro-orbits>b { position:absolute; inset:calc(50% - 10px); display:grid; place-items:center; width:20px; height:20px; border:1px solid #d8f5ff88; border-radius:50%; box-shadow:0 0 25px #2fbfff55; }
+.intro-orbits>b>span { width:4px; height:4px; border-radius:50%; background:#fff; box-shadow:0 0 12px 4px #53c9ff; }
+
+/* Final invitation: instrument-like, luminous, and spatial. */
+.closing { min-height:100svh; padding:110px 6% 90px; display:grid; place-items:center; background:radial-gradient(circle at 50% 52%,#0c6f9f3d 0,transparent 30%),linear-gradient(180deg,#03070a,#010305); border-top:1px solid #59c8ff24; isolation:isolate; }
+.closing:before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,transparent 49.9%,#bcecff18 50%,transparent 50.1%),linear-gradient(0deg,transparent 49.9%,#bcecff13 50%,transparent 50.1%); }
+.closing-copy { position:relative; z-index:3; text-align:center; display:grid; justify-items:center; }
+.closing-copy>.eyebrow { justify-content:center; color:#8bd7f9; }
+.closing h2 { font-size:clamp(72px,10vw,170px); line-height:.88; letter-spacing:-.075em; font-weight:400; margin:38px 0 40px; }
+.closing-line { display:block; color:#f1f7fa; }
+.closing-line-accent { background:linear-gradient(100deg,#3bbcff 5%,#e9f8ff 52%,#ff6e2d 96%); color:transparent!important; background-clip:text; }
+.closing-lead { color:#9eb2bf; font-size:clamp(16px,1.35vw,21px); line-height:1.65; margin:0 0 34px; }
+.closing-cta { min-width:245px; justify-content:space-between; border:1px solid #a6def566; background:#e9f8ff; box-shadow:0 0 50px #26b7f52b; }
+.closing-cta:hover { background:#ff793e; }
+.closing-cosmos { position:absolute; width:min(82vw,1040px); aspect-ratio:1; z-index:1; opacity:.78; }
+.closing-cosmos>i { position:absolute; inset:0; border:1px solid #78d6ff2e; border-radius:50%; }
+.closing-cosmos>i:nth-child(2) { inset:12%; border-color:#6bcfff26; transform:rotate(35deg); }
+.closing-cosmos>i:nth-child(3) { inset:27%; border-color:#ff794c32; transform:rotate(-18deg); }
+.closing-cosmos>i:before { content:""; position:absolute; width:7px; height:7px; border-radius:50%; top:50%; right:-4px; background:#bcecff; box-shadow:0 0 20px 4px #35bdff; }
+.closing-cosmos>i:nth-child(2):before { width:5px; height:5px; background:#ff7c42; box-shadow:0 0 18px 3px #ff5c24; }
+.closing-cosmos>i:nth-child(3):before { width:4px; height:4px; }
+.closing-core { position:absolute; inset:calc(50% - 4px); width:8px; height:8px; border-radius:50%; background:#fff; box-shadow:0 0 25px 8px #5acbff,0 0 80px 20px #148ecc55; }
+.closing-scan { position:absolute; inset:4%; border-radius:50%; border-top:1px solid #ffffffa0; filter:drop-shadow(0 0 8px #fff); transform:rotate(-28deg); }
+.closing-index { position:absolute; z-index:3; inset:35px 6% auto; display:flex; justify-content:space-between; font:12px "IBM Plex Mono",monospace; color:#7292a5; }
+.closing-status { position:absolute; z-index:3; bottom:36px; display:flex; align-items:center; gap:13px; font:11px "IBM Plex Mono",monospace; color:#7994a5; }
+.closing-status strong { color:#dff6ff; font-weight:500; }
+.closing-status i { width:5px; height:5px; border-radius:50%; background:#ff7638; box-shadow:0 0 10px #ff7638; }
+.is-horizontal { height:440svh; }
+.is-horizontal .journey-stage { position:sticky; top:0; height:100svh; min-height:650px; }
+.is-horizontal .destination-rail { display:flex; width:400%; height:100%; will-change:transform; }
+.is-horizontal .destination-panel { flex:0 0 25%; width:25%; height:100%; min-height:0; padding:105px 1.5% 125px; }
+.is-horizontal .destination-bottom { position:absolute; left:6%; right:6%; bottom:22px; margin:0; padding:0; }
+.motion-reduced .hero-sequence { height:auto; }
+.motion-reduced .hero-sequence .hero { position:relative; }
+.motion-reduced .hero-passage-caption { display:none; }
+.motion-reduced .hero-progress { display:none; }
+.motion-reduced .destination-panel { min-height:680px; }
+
+/* Practical details share the same atmosphere as the surrounding story. */
+.questions { position:relative; isolation:isolate; overflow:hidden; min-height:780px; grid-template-columns:minmax(280px,.78fr) minmax(520px,1.22fr); gap:8%; align-items:center; background:linear-gradient(180deg,#0c1116 0%,#080d11 34%,#03070a 100%); }
+.questions:before { content:""; position:absolute; inset:0; z-index:-1; opacity:.16; background:radial-gradient(circle at 16% 50%,#58c9f119 0,transparent 24%); mask-image:linear-gradient(90deg,#000,transparent 58%); }
+.faq-intro { position:relative; z-index:1; }
+.faq-intro>.eyebrow { color:#91a5b0; }
+.questions .faq-intro h2 { font-size:clamp(54px,5.5vw,92px); line-height:.96; margin:34px 0 30px; }
+.faq-lead { max-width:330px; color:#8499a7; font-size:15px; line-height:1.8; }
+.faq-orbit { position:relative; width:210px; aspect-ratio:1; margin:55px 0 0 8%; border:1px solid #a7bcc426; border-radius:50%; opacity:.64; }
+.faq-orbit:before,.faq-orbit:after { content:""; position:absolute; inset:50% auto auto 50%; background:#a7bac42c; transform:translate(-50%,-50%); }
+.faq-orbit:before { width:1px; height:132%; }
+.faq-orbit:after { width:132%; height:1px; }
+.faq-orbit>i { position:absolute; inset:15%; border:1px solid #8faab62b; border-radius:50%; transform:rotate(24deg); }
+.faq-orbit>i:nth-child(2) { inset:31%; border-color:#a9b9c02b; transform:rotate(-18deg); }
+.faq-orbit>i:nth-child(3) { inset:46%; border:0; width:8%; height:8%; border-radius:50%; background:#eafaff; box-shadow:0 0 18px 5px #7fcbe04d; }
+.faq-orbit>span { position:absolute; width:7px; height:7px; border-radius:50%; top:48%; right:-4px; background:#c8d8dd; box-shadow:0 0 14px 3px #9bc9d04a; }
+.faq-orbit>b { position:absolute; left:66%; top:7%; width:max-content; color:#69899a; font:10px "IBM Plex Mono",monospace; font-weight:400; letter-spacing:.05em; }
+.faq-list { position:relative; z-index:1; border-top:1px solid #d7e7ed1f; display:grid; gap:0; }
+.faq-item { position:relative; overflow:hidden; border:0!important; border-bottom:1px solid #d7e7ed1a!important; background:transparent; transition:background .4s; }
+.faq-item:before { content:""; position:absolute; inset:0 auto 0 0; width:1px; background:#b4d4df; transform:scaleY(0); transform-origin:top; transition:transform .45s; }
+.faq-item[data-state="open"] { background:linear-gradient(90deg,#e8f5fa08,transparent 78%); transform:none; }
+.faq-item[data-state="open"]:before { transform:scaleY(1); }
+.faq-trigger { align-items:center; width:100%; padding:26px 28px; gap:22px; font-size:clamp(16px,1.3vw,20px); line-height:1.45; }
+.faq-question { flex:1; }
+.faq-number { color:#64879a; min-width:24px; transition:color .3s; }
+.faq-trigger>svg { width:32px; height:32px; padding:8px; border:1px solid #d1e2e72b; border-radius:50%; color:#9db0b7; transition:transform .45s,background .3s,color .3s!important; }
+.faq-trigger:hover { color:#e9f8ff; }
+.faq-trigger:hover>svg,.faq-item[data-state="open"] .faq-trigger>svg { background:#dce9ed; color:#061018; }
+.faq-item[data-state="open"] .faq-number { color:#c8d8dd; }
+.faq-answer { max-width:680px; padding:0 82px 30px 74px; color:#8fa7b5; font-size:15px; line-height:1.85; }
+@media(max-width:800px) {
+ .hero-sequence { height:280svh; }
+ .hero-sequence .hero { min-height:640px; }
+ .hero-content { padding:170px 6% 100px; }
+ .hero-content h1 { font-size:clamp(48px,11vw,85px); }
+ .hero-coordinate { bottom:22%; }
+ .hero-art:after { background:linear-gradient(180deg,#01040788,transparent 50%,#010407aa),linear-gradient(90deg,#01040766,transparent); }
+ .hero-passage-caption { bottom:34%; }
+ .hero-passage-caption>p:last-child { font-size:44px; }
+ .ascent { height:260svh; }
+ .ascent-heading { padding-top:155px; }
+ .ascent-readout { bottom:27%; }
+ .destination-header { top:22px; align-items:flex-start; gap:14px; }
+ .destination-header p { font-size:12px; max-width:170px; }
+ .destination-header a { font-size:12px; min-height:32px; gap:8px; }
+ .destination-panel { grid-template-columns:1fr; grid-template-rows:50% 50%; min-height:780px; padding:90px 6% 110px; }
+ .destination-copy { grid-row:2; align-self:start; }
+ .destination-copy>.eyebrow { font-size:12px; margin:0; }
+ .destination-copy h2 { font-size:62px; margin:10px 0; }
+ .destination-poem { font-size:16px; line-height:1.5; margin:0; }
+ .destination-meta { margin:12px 0 5px; flex-direction:row; gap:15px; font-size:12px; }
+ .destination-cta { font-size:14px; padding:12px 0; gap:28px; }
+ .destination-visual { grid-row:1; min-height:0; }
+ .destination-planet { width:min(65vw,30svh); max-width:330px; }
+ .world-lunar .destination-planet { width:min(53vw,25svh); }
+ .world-mars .destination-planet { width:min(57vw,28svh); }
+ .world-saturn .destination-planet { width:min(87vw,43svh); }
+ .destination-number { top:76px; right:6%; font-size:11px; }
+ .destination-bottom nav { gap:0; justify-content:space-between; }
+ .destination-bottom button { font-size:14px; gap:6px; padding:14px 0; }
+ .destination-bottom button>span { font-size:12px; }
+ .destination-disclosure { font-size:12px; }
+ .is-horizontal { height:390svh; }
+ .is-horizontal .journey-stage { min-height:660px; }
+ .is-horizontal .destination-panel { padding:75px 1.5% 95px; }
+ .is-horizontal .destination-bottom { bottom:16px; }
+ .intro-orbits { display:block; width:190px; height:190px; margin:35px auto 10px; }
+ .intro-orbit:nth-child(2) { inset:20px; }.intro-orbit:nth-child(3) { inset:42px; }.intro-orbit:nth-child(4) { inset:63px; }
+ .closing { min-height:820px; padding:100px 6% 80px; }
+ .closing h2 { font-size:clamp(66px,18vw,96px); margin:30px 0; }
+ .closing-lead { font-size:16px; }
+ .closing-cosmos { width:150vw; }
+ .closing-index { top:24px; font-size:10px; }.closing-index span:last-child { display:none; }
+ .site-footer .footer-bottom { display:grid; grid-template-columns:auto 1fr auto; gap:8px 14px; align-items:center; }
+ .site-footer .footer-bottom>span { grid-column:1/2; margin:0; white-space:nowrap; }
+ .site-footer .footer-copyright em { display:none; }
+ .site-footer .footer-bottom>button:not(.motion-button) { grid-column:3; grid-row:1; justify-self:end; min-height:36px; font-size:12px; }
+ .site-footer .motion-button { grid-column:1; grid-row:2; justify-self:start; min-height:44px; }
+ .site-footer .back-top { grid-column:3; grid-row:2; justify-self:end; width:44px; height:44px; max-width:none; padding:0; border:1px solid #78cef047; border-radius:50%; display:grid; place-items:center; font-size:0; }
+ .site-footer .back-top svg { width:19px; height:19px; }
+}
+@media(max-height:740px) and (min-width:801px) {
+ .hero-sequence .hero,.is-horizontal .journey-stage { min-height:580px; }
+ .destination-copy h2 { font-size:85px; margin:15px 0; }
+ .destination-planet { width:80%; }
+ .destination-meta { margin:15px 0; }
+}
+@media(max-width:370px) {
+ .destination-copy h2 { font-size:53px; }
+ .destination-meta { gap:8px; }
+ .destination-bottom button { font-size:14px; }
+ .destination-bottom button>span { display:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .hero-sequence { height:auto; }.hero-sequence .hero { position:relative; }
+ .hero-passage-caption,.hero-progress { display:none; }
+}
+@media(max-width:800px) {
+ .questions { min-height:0; grid-template-columns:1fr; gap:55px; padding-top:90px; padding-bottom:90px; }
+ .questions .faq-intro h2 { font-size:clamp(52px,15vw,76px); }
+ .faq-lead { max-width:300px; }
+ .faq-orbit { width:160px; margin:42px 0 0 45%; }
+ .faq-list { gap:0; }
+ .faq-trigger { padding:21px 18px; gap:13px; font-size:15px; }
+ .faq-trigger>svg { width:31px; height:31px; padding:8px; }
+ .faq-item[data-state="open"] { transform:none; }
+ .faq-answer { padding:0 48px 24px 55px; font-size:14px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .faq-item { transition:none; }
+}
