@@ -57,4 +57,3 @@ The included GitHub workflow checks types and builds on pushes and pull requests
 Aphelion is a fictional portfolio project. It is not a travel operator and does not collect payment, personal data, or real bookings. Journey durations, future departures, spacecraft, and service descriptions are speculative. There are no fabricated customer testimonials or claimed awards.
 
 Original concept and creative direction: **Ebrahim Alhebshi**. Design and development created in collaboration with Codex. See asset provenance for third-party dependencies and imagery.
-
