@@ -1,17 +1,44 @@
-# Aphelion
+# APHELION
 
-**A different perspective.** A cinematic space-travel concept by Ebrahim Alhebshi.
+### A different perspective.
+<img width="1487" height="938" alt="clipboard" src="https://github.com/user-attachments/assets/97a59aaa-0772-4aae-8e1c-20248cf423d6" />
 
-Aphelion reimagines the original [Pixiu](https://pixiu.qode.top/) WordPress project as a responsive React experience with original artwork, a scroll-controlled orbital story, and an interactive fictional mission planner.
 
-## Run locally
+<p align="center">
+  A cinematic, fictional space-travel experience by <strong>Ebrahim Alhebshi</strong>.<br />
+  An original redesign of the <a href="https://pixiu.qode.top/">Pixiu</a> WordPress project, built as a responsive React website.
+</p>
+
+---
+
+## The experience
+
+Aphelion is designed as a slow, atmospheric passage from Earth to orbit. It pairs scroll-controlled cinematic scenes with an orbital destination explorer, layered stars, motion that respects user preferences, and a fictional mission planner.
+
+**Inside the experience**
+
+- A branded loading sequence, cinematic hero, and scroll-driven ascent scenes.
+- Smooth scrolling, layered star fields, horizontal planet movement, and coordinated reveals.
+- Four imagined destinations: Earth orbit, the Moon, Mars, and Saturn.
+- A responsive experience tailored for desktop and mobile, with reduced-motion support.
+- An accessible fictional planner that creates a downloadable concept itinerary.
+
+> Aphelion is a portfolio concept. It does not sell travel, process payment, or collect personal information.
+
+## Built with
+
+Next.js · React · TypeScript · GSAP · Lenis · self-hosted fonts · responsive WebP and MP4 media
+
+The project is exported as static files, so it can be deployed to GitHub Pages, a subdomain, or any standard web host.
+
+## Run it locally
 
 ```sh
 npm ci
 npm run dev
 ```
 
-The development server prints its localhost URL (normally port 5173). Node.js 24 was used for development; package.json records the minimum compatible version.
+Open the URL printed in the terminal. Then use these checks before deployment:
 
 ```sh
 npm run typecheck
@@ -19,41 +46,28 @@ npm run build
 npm start
 ```
 
-The production build exports to `out/`. Stop the development server before starting the production preview on the same port.
+The production export is generated in `out/`. Stop the development server before using the production preview on the same port.
 
-## Experience
+## Project guide
 
-- Original Aphelion identity, large editorial typography, and cinematic Earth/lunar/observatory imagery.
-- Scroll-controlled Seedance 2.5 hero and ascent videos, Lenis smooth scrolling, horizontal planet passages, sparse canvas stars, and coordinated GSAP reveals.
-- Distinct desktop and phone compositions, accessible dialogs and menus, visible focus states, and reduced-motion support.
-- Four fictional journeys with configurable season and group size; downloadable concept itinerary.
-- Self-hosted fonts, responsive local WebP imagery, and optimized desktop/mobile MP4 films; no runtime AI or paid APIs.
-- Optional progressive WebMCP planner tool in supported browsers.
-
-## Project map
-
-| File | Purpose |
+| Location | What it contains |
 | --- | --- |
-| `components/aphelion.tsx` | Page sections, planner, navigation, FAQ, and dialogs |
-| `app/globals.css` | Visual system and responsive styles |
-| `lib/use-scene-motion.ts` | Scroll animation and preference cleanup |
-| `lib/journeys.ts` | Editable itinerary content and asset base path |
-| `app/layout.tsx` | Fonts, metadata, and icon |
-| `public/images/` | Optimized original artwork |
+| `components/aphelion.tsx` | Page sections, navigation, planner, FAQ, and dialogs |
+| `app/cinematic.css` | The cinematic visual system, animation, and responsive styling |
+| `lib/use-scene-motion.ts` | Scroll animation setup and motion-preference cleanup |
+| `lib/journeys.ts` | Destination content and itinerary data |
+| `public/images/` | Responsive planet and editorial imagery |
+| `public/videos/` | Desktop and mobile cinematic media |
 
-The Sites React starter supplies local preview tooling and UI primitives. Production uses Next.js static export so the resulting site can be hosted on an ordinary web server.
+## Further reading
 
-## Documentation
+- [Case study](docs/CASE-STUDY.md) — creative direction, interaction design, and outcome.
+- [Deployment guide](docs/DEPLOYMENT.md) — hosting on a custom domain or GitHub Pages.
+- [Artwork and Magnific workflow](docs/ASSETS.md) — asset provenance and media pipeline.
+- [QA record](docs/QA.md) — completed checks and known limits.
 
-- [Case study](docs/CASE-STUDY.md): original problem, creative direction, interaction design, and honest outcome.
-- [Deploy to your domain or GitHub Pages](docs/DEPLOYMENT.md): static hosting and optional subpath setup.
-- [Artwork and Magnific workflow](docs/ASSETS.md): provenance, prompts, credit usage, and the media pipeline.
-- [QA record](docs/QA.md): completed checks and limitations.
+The included GitHub workflow runs type and production-build checks on pushes and pull requests. It does not publish the site automatically.
 
-The included GitHub workflow checks types and builds on pushes and pull requests. It does not publish publicly.
+## Credits
 
-## Concept status
-
-Aphelion is a fictional portfolio project. It is not a travel operator and does not collect payment, personal data, or real bookings. Journey durations, future departures, spacecraft, and service descriptions are speculative. There are no fabricated customer testimonials or claimed awards.
-
-Original concept and creative direction: **Ebrahim Alhebshi**. Design and development created in collaboration with Codex. See asset provenance for third-party dependencies and imagery.
+Original concept and creative direction: **Ebrahim Alhebshi**. Design and development created in collaboration with Codex. See the asset documentation for third-party imagery and dependencies.
