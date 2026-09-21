@@ -34,7 +34,15 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     const context = surface.getContext("2d", { alpha: false });
     if (!context) return false;
     context.imageSmoothingQuality = "high";
-    context.drawImage(node, 0, 0, width, height);
+    // Canvas does not understand CSS object-fit. Scale and crop the decoded
+    // frame explicitly so portrait mobile screens keep the film's proportions
+    // instead of squeezing a 16:9 image into a tall canvas.
+    const coverScale = Math.max(width / node.videoWidth, height / node.videoHeight);
+    const renderWidth = node.videoWidth * coverScale;
+    const renderHeight = node.videoHeight * coverScale;
+    const offsetX = (width - renderWidth) * .66;
+    const offsetY = (height - renderHeight) * .5;
+    context.drawImage(node, offsetX, offsetY, renderWidth, renderHeight);
     surface.dataset.presentedTime = node.currentTime.toFixed(3);
     setReady(true);
     return true;
@@ -85,14 +93,16 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     const node = video.current;
     const host = node?.closest(section);
     if (!node || !host || !near || reduced || !ready) return;
-    let measureRaf = 0, commitRaf = 0, desired = node.currentTime || 0;
+    let measureRaf = 0, easingRaf = 0, commitRaf = 0;
+    let desired = node.currentTime || 0, displayed = desired, previous = performance.now();
     let busy = false, disposed = false, seekWatchdog = 0;
+    const responseTime = matchMedia("(pointer: coarse)").matches ? 75 : 125;
     const duration = () => Number.isFinite(node.duration) ? Math.max(0, node.duration - .05) : 0;
     function seek() {
       if (!node || busy || node.seeking || node.readyState < 2 || duration() === 0) return;
       // Keep only the latest requested frame. Queuing every intermediate seek
       // makes the film fall behind the page and can leave it stuck on frame 0.
-      const next = Math.min(duration(), Math.max(0, Math.round(desired * 24) / 24));
+      const next = Math.min(duration(), Math.max(0, Math.round(displayed * 24) / 24));
       if (Math.abs(node.currentTime - next) > .02) {
         busy = true;
         node.currentTime = next;
@@ -124,19 +134,36 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
         seek();
       });
     }
+    function ease(time: number) {
+      easingRaf = 0;
+      if (disposed || document.hidden) return;
+      const elapsed = Math.min(80, Math.max(0, time - previous));
+      previous = time;
+      displayed += (desired - displayed) * (1 - Math.exp(-elapsed / responseTime));
+      if (Math.abs(desired - displayed) < .012) displayed = desired;
+      seek();
+      // Mouse wheels arrive in discrete steps. Continue easing briefly after
+      // the final wheel event so the last movement settles like a trackpad.
+      if (Math.abs(desired - displayed) >= .012) easingRaf = requestAnimationFrame(ease);
+    }
+    function scheduleEase() {
+      if (easingRaf || disposed) return;
+      previous = performance.now();
+      easingRaf = requestAnimationFrame(ease);
+    }
     function measure() {
       measureRaf = 0;
       if (!node || !host || document.hidden) return;
       const rect = host.getBoundingClientRect();
       const progress = Math.max(0, Math.min(1, -rect.top / Math.max(1, rect.height - innerHeight)));
       desired = progress * duration();
-      seek();
+      scheduleEase();
     }
     function scheduleMeasure() {
       if (measureRaf || disposed) return;
       measureRaf = requestAnimationFrame(measure);
     }
-    function visibilityChange() { if (!document.hidden) scheduleMeasure(); }
+    function visibilityChange() { if (!document.hidden) { scheduleMeasure(); scheduleEase(); } }
     node.addEventListener("seeked", commitFrame);
     node.addEventListener("canplay", scheduleMeasure);
     node.addEventListener("loadedmetadata", scheduleMeasure);
@@ -151,6 +178,7 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
       window.clearTimeout(seekWatchdog);
       cancelAnimationFrame(commitRaf);
       cancelAnimationFrame(measureRaf);
+      cancelAnimationFrame(easingRaf);
       node.removeEventListener("seeked", commitFrame);
       node.removeEventListener("canplay", scheduleMeasure);
       node.removeEventListener("loadedmetadata", scheduleMeasure);
