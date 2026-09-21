@@ -20,13 +20,21 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     const node = video.current;
     const surface = canvas.current;
     if (!node || !surface || node.readyState < 2 || !node.videoWidth || !node.videoHeight) return false;
-    if (surface.width !== node.videoWidth || surface.height !== node.videoHeight) {
-      surface.width = node.videoWidth;
-      surface.height = node.videoHeight;
+    // The decoded film can be larger than the screen. Painting every scroll
+    // frame at its native 1440p size makes seeking unnecessarily expensive,
+    // especially while the browser is also downloading the movie.
+    const bounds = surface.getBoundingClientRect();
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+    const width = Math.min(node.videoWidth, Math.max(2, Math.round(bounds.width * pixelRatio)));
+    const height = Math.min(node.videoHeight, Math.max(2, Math.round(bounds.height * pixelRatio)));
+    if (surface.width !== width || surface.height !== height) {
+      surface.width = width;
+      surface.height = height;
     }
     const context = surface.getContext("2d", { alpha: false });
     if (!context) return false;
-    context.drawImage(node, 0, 0, surface.width, surface.height);
+    context.imageSmoothingQuality = "high";
+    context.drawImage(node, 0, 0, width, height);
     surface.dataset.presentedTime = node.currentTime.toFixed(3);
     setReady(true);
     return true;
@@ -75,7 +83,10 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     const duration = () => Number.isFinite(node.duration) ? Math.max(0, node.duration - .05) : 0;
     function seek() {
       if (!node || busy || node.seeking || node.readyState < 2 || duration() === 0) return;
-      const next = Math.min(duration(), Math.max(0, Math.round(displayed * 30) / 30));
+      // Films are encoded with short, fixed keyframe intervals. A 24fps seek
+      // cadence is visually smooth while leaving enough time to present each
+      // decoded frame on slower connections and laptops.
+      const next = Math.min(duration(), Math.max(0, Math.round(displayed * 24) / 24));
       if (Math.abs(node.currentTime - next) > .02) {
         busy = true;
         node.currentTime = next;
@@ -129,7 +140,7 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     <img className="film-poster" src={asset(`/videos/${name}-poster.webp`)} alt="" width={1920} height={1080} fetchPriority={idle ? "high" : "auto"} />
     <canvas ref={canvas} className="film-video" aria-hidden="true" />
     <video ref={video} className="film-decoder" muted playsInline preload={near && !reduced ? "auto" : "none"} aria-hidden="true" tabIndex={-1}
-      onCanPlay={() => { setReady(true); setFailed(false); }} onError={(event) => {
+      onError={(event) => {
         const node = video.current;
         // Ignore errors dispatched by an individual <source>. The browser may
         // still have selected and decoded the other responsive source.
@@ -141,3 +152,4 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     </video>
   </div>;
 }
+
