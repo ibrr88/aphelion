@@ -70,23 +70,29 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
     const node = video.current;
     const host = node?.closest(section);
     if (!node || !host || reduced) return;
-    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) setNear(true); }, { rootMargin: "2200px 0px" });
+    // Start fetching the later film well before its section arrives. Cloudflare
+    // serves byte ranges correctly, but waiting until the section is only two
+    // screens away leaves too little time for the larger observatory film.
+    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) setNear(true); }, { rootMargin: "4800px 0px" });
     observer.observe(host);
-    return () => observer.disconnect();
-  }, [section, reduced]);
+    // IntersectionObserver can be delayed during a long smooth-scroll scene.
+    // The fallback makes the preload deterministic without competing with the
+    // hero film during the first moments of page load.
+    const warmup = window.setTimeout(() => setNear(true), idle ? 0 : 1800);
+    return () => { observer.disconnect(); window.clearTimeout(warmup); };
+  }, [section, reduced, idle]);
   useEffect(() => {
     const node = video.current;
     const host = node?.closest(section);
     if (!node || !host || !near || reduced || !ready) return;
-    let raf = 0, commitRaf = 0, desired = 0, displayed = node.currentTime || 0, active = false, last = 0, previous = performance.now();
+    let measureRaf = 0, commitRaf = 0, desired = node.currentTime || 0;
     let busy = false, disposed = false, seekWatchdog = 0;
     const duration = () => Number.isFinite(node.duration) ? Math.max(0, node.duration - .05) : 0;
     function seek() {
       if (!node || busy || node.seeking || node.readyState < 2 || duration() === 0) return;
-      // Films are encoded with short, fixed keyframe intervals. A 24fps seek
-      // cadence is visually smooth while leaving enough time to present each
-      // decoded frame on slower connections and laptops.
-      const next = Math.min(duration(), Math.max(0, Math.round(displayed * 24) / 24));
+      // Keep only the latest requested frame. Queuing every intermediate seek
+      // makes the film fall behind the page and can leave it stuck on frame 0.
+      const next = Math.min(duration(), Math.max(0, Math.round(desired * 24) / 24));
       if (Math.abs(node.currentTime - next) > .02) {
         busy = true;
         node.currentTime = next;
@@ -96,9 +102,11 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
         seekWatchdog = window.setTimeout(() => {
           if (disposed) return;
           busy = false;
-          if (!node.seeking) presentFrame();
+          if (!node.seeking && node.readyState >= 2) presentFrame();
           seek();
-        }, 650);
+        }, 900);
+      } else {
+        presentFrame();
       }
     }
     function commitFrame() {
@@ -111,30 +119,46 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
         presentFrame();
         if (canvas.current) canvas.current.dataset.presentedTime = node!.currentTime.toFixed(3);
         busy = false;
+        // If the user continued scrolling while the decoder was busy, jump to
+        // the newest requested frame rather than replaying stale seek targets.
         seek();
       });
     }
-    function tick(time: number) {
-      if (!node || !host) return;
-      if (time - last > 15) {
-        const rect = host.getBoundingClientRect();
-        const progress = Math.max(0, Math.min(1, -rect.top / Math.max(1, rect.height - innerHeight)));
-        desired = progress * duration();
-        const elapsed = Math.min(80, time - previous); previous = time;
-        displayed += (desired - displayed) * (1 - Math.exp(-elapsed / 150));
-        if (Math.abs(desired - displayed) < .012) displayed = desired;
-        seek(); last = time;
-      }
-      raf = requestAnimationFrame(tick);
+    function measure() {
+      measureRaf = 0;
+      if (!node || !host || document.hidden) return;
+      const rect = host.getBoundingClientRect();
+      const progress = Math.max(0, Math.min(1, -rect.top / Math.max(1, rect.height - innerHeight)));
+      desired = progress * duration();
+      seek();
     }
-    function sync() { cancelAnimationFrame(raf); if (active && !document.hidden) raf = requestAnimationFrame(tick); }
-    const observer = new IntersectionObserver(([entry]) => { active = entry.isIntersecting; sync(); });
-    observer.observe(host);
+    function scheduleMeasure() {
+      if (measureRaf || disposed) return;
+      measureRaf = requestAnimationFrame(measure);
+    }
+    function visibilityChange() { if (!document.hidden) scheduleMeasure(); }
     node.addEventListener("seeked", commitFrame);
-    node.addEventListener("canplay", seek);
-    node.addEventListener("loadedmetadata", seek);
-    document.addEventListener("visibilitychange", sync);
-    return () => { disposed = true; window.clearTimeout(seekWatchdog); cancelAnimationFrame(commitRaf); cancelAnimationFrame(raf); observer.disconnect(); node.removeEventListener("seeked", commitFrame); node.removeEventListener("canplay", seek); node.removeEventListener("loadedmetadata", seek); document.removeEventListener("visibilitychange", sync); node.pause(); };
+    node.addEventListener("canplay", scheduleMeasure);
+    node.addEventListener("loadedmetadata", scheduleMeasure);
+    window.addEventListener("scroll", scheduleMeasure, { passive: true });
+    window.addEventListener("resize", scheduleMeasure, { passive: true });
+    document.addEventListener("visibilitychange", visibilityChange);
+    // Synchronize immediately. This covers refreshed hash links and sections
+    // reached before IntersectionObserver callbacks have fired.
+    scheduleMeasure();
+    return () => {
+      disposed = true;
+      window.clearTimeout(seekWatchdog);
+      cancelAnimationFrame(commitRaf);
+      cancelAnimationFrame(measureRaf);
+      node.removeEventListener("seeked", commitFrame);
+      node.removeEventListener("canplay", scheduleMeasure);
+      node.removeEventListener("loadedmetadata", scheduleMeasure);
+      window.removeEventListener("scroll", scheduleMeasure);
+      window.removeEventListener("resize", scheduleMeasure);
+      document.removeEventListener("visibilitychange", visibilityChange);
+      node.pause();
+    };
   }, [near, ready, reduced, section, presentFrame]);
   return <div className={"scroll-film" + (ready && !failed && !reduced ? " film-ready" : "")}>
     <img className="film-poster" src={asset(`/videos/${name}-poster.webp`)} alt="" width={1920} height={1080} fetchPriority={idle ? "high" : "auto"} />
