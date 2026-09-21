@@ -1,5 +1,27 @@
 /* Film, scrolling, and horizontal orbital passages. */
 html.lenis { scroll-behavior:auto; }
+html.aphelion-loading,html.aphelion-loading body { overflow:hidden; }
+.site-loader { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; overflow:hidden; color:#e9f6fb; background:radial-gradient(circle at 50% 48%,#0a608733 0,transparent 27%),linear-gradient(145deg,#020507,#071017 55%,#020507); transition:clip-path .9s cubic-bezier(.76,0,.24,1),opacity .7s ease; clip-path:inset(0 0 0 0); }
+.site-loader:before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent 49.95%,#9bddf514 50%,transparent 50.05%),linear-gradient(0deg,transparent 49.95%,#9bddf510 50%,transparent 50.05%); }
+.site-loader[data-state="leaving"] { clip-path:inset(0 0 100% 0); opacity:.35; pointer-events:none; }
+.loader-mark { position:relative; z-index:1; display:grid; justify-items:center; }
+.loader-orbits { position:relative; width:clamp(170px,20vw,280px); aspect-ratio:1; margin-bottom:34px; }
+.loader-orbits i { position:absolute; inset:0; border:1px solid #81d9fc35; border-radius:50%; animation:loader-spin 8s linear infinite; }
+.loader-orbits i:nth-child(2) { inset:18%; border-color:#ff7a3b3d; animation-direction:reverse; animation-duration:5.5s; }
+.loader-orbits i:nth-child(3) { inset:36%; border-color:#d7f4ff47; animation-duration:4s; }
+.loader-orbits i:after { content:""; position:absolute; top:50%; right:-4px; width:7px; height:7px; border-radius:50%; background:#bcecff; box-shadow:0 0 18px 4px #2bbcff; transform:translateY(-50%); }
+.loader-orbits i:nth-child(2):after { width:6px; height:6px; background:#ff7a3b; box-shadow:0 0 20px 5px #ff682f8c; }
+.loader-orbits i:nth-child(3):after { width:4px; height:4px; }
+.loader-orbits>span { position:absolute; inset:calc(50% - 5px); width:10px; height:10px; border-radius:50%; background:#fff; box-shadow:0 0 24px 8px #48c7ff,0 0 70px 22px #078ed85c; animation:loader-pulse 1.8s ease-in-out infinite; }
+.loader-name { display:flex; align-items:center; gap:15px; font-size:clamp(26px,3vw,42px); letter-spacing:.24em; font-weight:500; }
+.loader-name .brand-orbit { width:18px; height:18px; }
+.loader-mark>p { margin:12px 0 0; color:#69899a; font:10px "IBM Plex Mono",monospace; letter-spacing:.28em; }
+.loader-readout { position:absolute; left:5%; right:5%; bottom:38px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:24px; color:#7393a4; font:10px "IBM Plex Mono",monospace; letter-spacing:.1em; }
+.loader-readout>div { height:1px; background:#9bdcf31f; overflow:hidden; }
+.loader-readout i { display:block; width:100%; height:100%; background:linear-gradient(90deg,#35bfff,#e8f8ff 60%,#ff7135); transform:scaleX(0); transform-origin:left; animation:loader-progress 1.15s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes loader-spin { to { transform:rotate(360deg); } }
+@keyframes loader-pulse { 50% { transform:scale(.72); opacity:.72; } }
+@keyframes loader-progress { to { transform:scaleX(1); } }
 .hero-sequence { height:320svh; position:relative; }
 .hero-sequence .hero { position:sticky; top:0; height:100svh; min-height:650px; max-height:none; }
 .scroll-film,.film-video,.film-poster { position:absolute; inset:0; width:100%; height:100%; }
@@ -105,11 +127,18 @@ html.lenis { scroll-behavior:auto; }
 .motion-reduced .hero-progress { display:none; }
 .motion-reduced .destination-panel { min-height:680px; }
 
+/* The observatory panel settles into the same atmosphere as the final chapters. */
+.experience { position:relative; background:linear-gradient(180deg,#020507 0%,#071018 56%,#0c1116 100%); }
+.experience-copy { position:relative; isolation:isolate; }
+.experience-copy:after,.questions:after { content:""; position:absolute; z-index:-1; right:0; height:clamp(300px,26.4vw,400px); pointer-events:none; }
+.experience-copy:after { bottom:0; width:72%; background:radial-gradient(circle at 100% 100%,#ff6f2b0e,transparent 62%); }
+
 /* Practical details share the same atmosphere as the surrounding story. */
 .questions { position:relative; isolation:isolate; overflow:hidden; min-height:780px; grid-template-columns:minmax(280px,.78fr) minmax(520px,1.22fr); gap:8%; align-items:center; background:linear-gradient(180deg,#0c1116 0%,#080d11 34%,#03070a 100%); }
-.questions:before { content:""; position:absolute; inset:0; z-index:-1; opacity:.16; background:radial-gradient(circle at 16% 50%,#58c9f119 0,transparent 24%); mask-image:linear-gradient(90deg,#000,transparent 58%); }
+.questions:before { content:""; position:absolute; inset:0; z-index:-1; opacity:.2; background:radial-gradient(circle at 16% 50%,#58c9f119 0,transparent 24%),radial-gradient(circle at 83% 44%,#ff71350d 0,transparent 28%); mask-image:linear-gradient(90deg,#000,transparent 86%); }
+.questions:after { top:0; width:33.49%; background:radial-gradient(circle at 100% 0,#ff6f2b0e,transparent 62%); }
 .faq-intro { position:relative; z-index:1; }
-.faq-intro>.eyebrow { color:#91a5b0; }
+.faq-intro>.eyebrow { color:#c48d73; }
 .questions .faq-intro h2 { font-size:clamp(54px,5.5vw,92px); line-height:.96; margin:34px 0 30px; }
 .faq-lead { max-width:330px; color:#8499a7; font-size:15px; line-height:1.8; }
 .faq-orbit { position:relative; width:210px; aspect-ratio:1; margin:55px 0 0 8%; border:1px solid #a7bcc426; border-radius:50%; opacity:.64; }
@@ -118,23 +147,30 @@ html.lenis { scroll-behavior:auto; }
 .faq-orbit:after { width:132%; height:1px; }
 .faq-orbit>i { position:absolute; inset:15%; border:1px solid #8faab62b; border-radius:50%; transform:rotate(24deg); }
 .faq-orbit>i:nth-child(2) { inset:31%; border-color:#a9b9c02b; transform:rotate(-18deg); }
-.faq-orbit>i:nth-child(3) { inset:46%; border:0; width:8%; height:8%; border-radius:50%; background:#eafaff; box-shadow:0 0 18px 5px #7fcbe04d; }
+.faq-orbit>i:nth-child(3) { inset:46%; border:0; width:8%; height:8%; border-radius:50%; background:#ff7a3b; box-shadow:0 0 18px 5px #ff642f72,0 0 52px 14px #ff642f24; }
 .faq-orbit>span { position:absolute; width:7px; height:7px; border-radius:50%; top:48%; right:-4px; background:#c8d8dd; box-shadow:0 0 14px 3px #9bc9d04a; }
 .faq-orbit>b { position:absolute; left:66%; top:7%; width:max-content; color:#69899a; font:10px "IBM Plex Mono",monospace; font-weight:400; letter-spacing:.05em; }
 .faq-list { position:relative; z-index:1; border-top:1px solid #d7e7ed1f; display:grid; gap:0; }
 .faq-item { position:relative; overflow:hidden; border:0!important; border-bottom:1px solid #d7e7ed1a!important; background:transparent; transition:background .4s; }
-.faq-item:before { content:""; position:absolute; inset:0 auto 0 0; width:1px; background:#b4d4df; transform:scaleY(0); transform-origin:top; transition:transform .45s; }
-.faq-item[data-state="open"] { background:linear-gradient(90deg,#e8f5fa08,transparent 78%); transform:none; }
+.faq-item:before { content:""; position:absolute; inset:0 auto 0 0; width:1px; background:linear-gradient(180deg,#60cfff,#ff7438); transform:scaleY(0); transform-origin:top; transition:transform .45s; }
+.faq-item[data-state="open"] { background:linear-gradient(90deg,#ff74380a,transparent 78%); transform:none; }
 .faq-item[data-state="open"]:before { transform:scaleY(1); }
 .faq-trigger { align-items:center; width:100%; padding:26px 28px; gap:22px; font-size:clamp(16px,1.3vw,20px); line-height:1.45; }
 .faq-question { flex:1; }
 .faq-number { color:#64879a; min-width:24px; transition:color .3s; }
 .faq-trigger>svg { width:32px; height:32px; padding:8px; border:1px solid #d1e2e72b; border-radius:50%; color:#9db0b7; transition:transform .45s,background .3s,color .3s!important; }
 .faq-trigger:hover { color:#e9f8ff; }
-.faq-trigger:hover>svg,.faq-item[data-state="open"] .faq-trigger>svg { background:#dce9ed; color:#061018; }
-.faq-item[data-state="open"] .faq-number { color:#c8d8dd; }
+.faq-item:hover { background:linear-gradient(90deg,#ff743807,transparent 72%); }
+.faq-trigger:hover>svg,.faq-item[data-state="open"] .faq-trigger>svg { border-color:#ff8b565e; background:#ff743814; color:#ff9a6d; }
+.faq-item:hover .faq-number,.faq-item[data-state="open"] .faq-number { color:#ff8f5b; }
 .faq-answer { max-width:680px; padding:0 82px 30px 74px; color:#8fa7b5; font-size:15px; line-height:1.85; }
 @media(max-width:800px) {
+ .loader-orbits { width:170px; margin-bottom:28px; }
+ .loader-name { font-size:25px; gap:11px; letter-spacing:.2em; }
+ .loader-mark>p { font-size:9px; letter-spacing:.2em; }
+ .loader-readout { left:6%; right:6%; bottom:26px; grid-template-columns:1fr auto; gap:12px; }
+ .loader-readout>div { grid-column:1/-1; grid-row:1; }
+ .loader-readout>span { grid-row:2; }
  .hero-sequence { height:280svh; }
  .hero-sequence .hero { min-height:640px; }
  .hero-content { padding:170px 6% 100px; }
@@ -198,11 +234,15 @@ html.lenis { scroll-behavior:auto; }
  .destination-bottom button>span { display:none; }
 }
 @media(prefers-reduced-motion:reduce) {
+ .site-loader { transition-duration:.2s; }
+ .loader-orbits i,.loader-orbits>span,.loader-readout i { animation:none; }
+ .loader-readout i { transform:scaleX(1); }
  .hero-sequence { height:auto; }.hero-sequence .hero { position:relative; }
  .hero-passage-caption,.hero-progress { display:none; }
 }
 @media(max-width:800px) {
  .questions { min-height:0; grid-template-columns:1fr; gap:55px; padding-top:90px; padding-bottom:90px; }
+ .questions:after { width:72%; }
  .questions .faq-intro h2 { font-size:clamp(52px,15vw,76px); }
  .faq-lead { max-width:300px; }
  .faq-orbit { width:160px; margin:42px 0 0 45%; }
@@ -215,3 +255,4 @@ html.lenis { scroll-behavior:auto; }
 @media(prefers-reduced-motion:reduce) {
  .faq-item { transition:none; }
 }
+
