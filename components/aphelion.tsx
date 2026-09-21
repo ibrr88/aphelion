@@ -37,6 +37,8 @@ function Brand({ large = false }: { large?: boolean }) {
 
 export default function Aphelion() {
   const root = useRef<HTMLElement>(null);
+  const [loaderLeaving, setLoaderLeaving] = useState(false);
+  const [loaderComplete, setLoaderComplete] = useState(false);
   const [motionOff, setMotionOff] = useState(false);
   const [systemMotionOff, setSystemMotionOff] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,6 +57,20 @@ export default function Aphelion() {
   const reduceMotion = motionOff || systemMotionOff;
   useSceneMotion(root, reduceMotion);
   useSmoothScroll(reduceMotion, menuOpen || bookingOpen || aboutOpen);
+
+  useEffect(() => {
+    document.documentElement.classList.add("aphelion-loading");
+    const leaveTimer = window.setTimeout(() => setLoaderLeaving(true), 1050);
+    const completeTimer = window.setTimeout(() => {
+      setLoaderComplete(true);
+      document.documentElement.classList.remove("aphelion-loading");
+    }, 1950);
+    return () => {
+      window.clearTimeout(leaveTimer);
+      window.clearTimeout(completeTimer);
+      document.documentElement.classList.remove("aphelion-loading");
+    };
+  }, []);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -125,6 +141,20 @@ export default function Aphelion() {
 
   return (
     <main id="top" ref={root} className={reduceMotion ? "motion-reduced" : ""}>
+      {!loaderComplete && (
+        <div className="site-loader" data-state={loaderLeaving ? "leaving" : "loading"} role="status" aria-label="Loading Aphelion">
+          <div className="loader-mark" aria-hidden="true">
+            <div className="loader-orbits"><i /><i /><i /><span /></div>
+            <div className="loader-name"><span className="brand-orbit" />APHELION</div>
+            <p>A DIFFERENT PERSPECTIVE</p>
+          </div>
+          <div className="loader-readout" aria-hidden="true">
+            <span>INITIALIZING PERSPECTIVE</span>
+            <div><i /></div>
+            <span>APH / 2026</span>
+          </div>
+        </div>
+      )}
       <a className="skip-link" href="#intro">Skip to content</a>
       <header className="site-header">
         <Brand />
@@ -211,3 +241,4 @@ export default function Aphelion() {
     </main>
   );
 }
+
