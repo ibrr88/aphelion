@@ -39,6 +39,7 @@ export default function Aphelion() {
   const root = useRef<HTMLElement>(null);
   const [loaderLeaving, setLoaderLeaving] = useState(false);
   const [loaderComplete, setLoaderComplete] = useState(false);
+  const [loaderProgress, setLoaderProgress] = useState(.02);
   const [motionOff, setMotionOff] = useState(false);
   const [systemMotionOff, setSystemMotionOff] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,16 +60,57 @@ export default function Aphelion() {
   useSmoothScroll(reduceMotion, menuOpen || bookingOpen || aboutOpen);
 
   useEffect(() => {
-    document.documentElement.classList.add("aphelion-loading");
-    const leaveTimer = window.setTimeout(() => setLoaderLeaving(true), 1050);
-    const completeTimer = window.setTimeout(() => {
-      setLoaderComplete(true);
-      document.documentElement.classList.remove("aphelion-loading");
-    }, 1950);
+    const page = document.documentElement;
+    page.classList.add("aphelion-loading");
+    const progress = new Map<string, number>([["departure", .02], ["observatory", .02]]);
+    const finished = new Set<string>();
+    let minimumElapsed = false, leaving = false, removeTimer = 0;
+    const updateProgress = () => setLoaderProgress((progress.get("departure")! + progress.get("observatory")!) / 2);
+    const leave = () => {
+      if (leaving) return;
+      leaving = true;
+      setLoaderProgress(1);
+      setLoaderLeaving(true);
+      removeTimer = window.setTimeout(() => {
+        setLoaderComplete(true);
+        page.classList.remove("aphelion-loading");
+      }, 900);
+    };
+    const maybeLeave = () => { if (minimumElapsed && finished.size === 2) leave(); };
+    const syncStoredState = () => {
+      for (const name of ["departure", "observatory"]) {
+        const key = name === "departure" ? "filmDeparture" : "filmObservatory";
+        const stored = Number(page.dataset[key + "Progress"]);
+        if (Number.isFinite(stored)) progress.set(name, stored);
+        if (page.dataset[key] === "ready") { progress.set(name, 1); finished.add(name); }
+      }
+      updateProgress();
+      maybeLeave();
+    };
+    const onProgress = (event: Event) => {
+      const detail = (event as CustomEvent<{ name?: string; progress?: number }>).detail;
+      if (!detail || !progress.has(detail.name || "") || !Number.isFinite(detail.progress)) return;
+      progress.set(detail.name!, Math.max(0, Math.min(1, detail.progress!)));
+      updateProgress();
+    };
+    const onReady = (event: Event) => {
+      const name = (event as CustomEvent<{ name?: string }>).detail?.name;
+      if (!name || !progress.has(name)) return;
+      progress.set(name, 1); finished.add(name); updateProgress(); maybeLeave();
+    };
+    window.addEventListener("aphelion:film-progress", onProgress);
+    window.addEventListener("aphelion:film-ready", onReady);
+    syncStoredState();
+    const minimumTimer = window.setTimeout(() => { minimumElapsed = true; maybeLeave(); }, 750);
+    // A failed codec or interrupted request must not permanently lock the page.
+    const safetyTimer = window.setTimeout(leave, 20000);
     return () => {
-      window.clearTimeout(leaveTimer);
-      window.clearTimeout(completeTimer);
-      document.documentElement.classList.remove("aphelion-loading");
+      window.removeEventListener("aphelion:film-progress", onProgress);
+      window.removeEventListener("aphelion:film-ready", onReady);
+      window.clearTimeout(minimumTimer);
+      window.clearTimeout(safetyTimer);
+      window.clearTimeout(removeTimer);
+      page.classList.remove("aphelion-loading");
     };
   }, []);
 
@@ -149,9 +191,9 @@ export default function Aphelion() {
             <p>A DIFFERENT PERSPECTIVE</p>
           </div>
           <div className="loader-readout" aria-hidden="true">
-            <span>INITIALIZING PERSPECTIVE</span>
-            <div><i /></div>
-            <span>APH / 2026</span>
+            <span>{loaderProgress < 1 ? "LOADING FLIGHT FILMS" : "PERSPECTIVE READY"}</span>
+            <div><i style={{ animation: "none", transform: `scaleX(${loaderProgress})` }} /></div>
+            <span>{String(Math.round(loaderProgress * 100)).padStart(3, "0")} / 100</span>
           </div>
         </div>
       )}

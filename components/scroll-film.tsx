@@ -12,8 +12,6 @@ type Props = { name: "departure" | "observatory"; section: string; reduced: bool
 export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const retries = useRef(0);
-  const [near, setNear] = useState(idle);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const presentFrame = useCallback(() => {
@@ -49,50 +47,99 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
   }, []);
   useEffect(() => {
     const node = video.current;
-    if (!node || !near || reduced) return;
-    setFailed(false);
-    let primed = false;
-    const detach = () => {
-      node.removeEventListener("loadeddata", prime);
-      node.removeEventListener("canplay", prime);
+    if (!node) return;
+    const root = document.documentElement;
+    const filmKey = name === "departure" ? "filmDeparture" : "filmObservatory";
+    const progressKey = filmKey + "Progress";
+    const sourceUrl = asset(`/videos/${name}${matchMedia("(max-width: 700px)").matches ? "-mobile" : ""}.mp4`);
+    let disposed = false, objectUrl = "", usingFallback = false, lastProgress = -1;
+    const request = new AbortController();
+    const announceProgress = (value: number) => {
+      const progress = Math.max(0, Math.min(1, value));
+      if (progress < 1 && progress - lastProgress < .01) return;
+      lastProgress = progress;
+      root.dataset[progressKey] = progress.toFixed(3);
+      window.dispatchEvent(new CustomEvent("aphelion:film-progress", { detail: { name, progress } }));
     };
+    const announceReady = () => {
+      root.dataset[filmKey] = "ready";
+      announceProgress(1);
+      window.dispatchEvent(new CustomEvent("aphelion:film-ready", { detail: { name } }));
+    };
+    if (reduced) {
+      announceReady();
+      return;
+    }
     const prime = () => {
-      if (primed) return;
+      if (disposed || root.dataset[filmKey] === "ready") return;
       if (!presentFrame()) return;
-      primed = true;
-      retries.current = 0;
       setFailed(false);
-      // Initialization is complete. Later `canplay` events can occur between
-      // seeks on a partially buffered film and must not repaint frame zero.
-      detach();
+      announceReady();
     };
-    // Cached media can finish before React hydrates and attaches JSX event
-    // handlers. Inspect the decoder directly as well as listening for events.
+    const fallback = () => {
+      if (disposed) return;
+      if (!usingFallback) {
+        usingFallback = true;
+        node.src = sourceUrl;
+        node.preload = "auto";
+        node.load();
+      } else {
+        setFailed(true);
+        // Never trap the visitor behind the loader when media playback is not
+        // supported. The poster remains as a graceful fallback.
+        announceReady();
+      }
+    };
     node.addEventListener("loadeddata", prime);
     node.addEventListener("canplay", prime);
-    if (node.readyState >= 2) prime();
-    else node.load();
-    return detach;
-  }, [near, reduced, presentFrame]);
+    node.addEventListener("error", fallback);
+    async function loadFilm() {
+      announceProgress(.02);
+      try {
+        const response = await fetch(sourceUrl, { cache: "force-cache", signal: request.signal });
+        if (!response.ok) throw new Error(`Film request failed: ${response.status}`);
+        const total = Number(response.headers.get("content-length")) || 0;
+        const reader = response.body?.getReader();
+        let blob: Blob;
+        if (reader && total) {
+          const chunks: BlobPart[] = [];
+          let loaded = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value) {
+              const copy = value.slice().buffer as ArrayBuffer;
+              chunks.push(copy); loaded += value.byteLength; announceProgress(.02 + .93 * loaded / total);
+            }
+          }
+          blob = new Blob(chunks, { type: response.headers.get("content-type") || "video/mp4" });
+        } else {
+          blob = await response.blob();
+          announceProgress(.95);
+        }
+        if (disposed) return;
+        objectUrl = URL.createObjectURL(blob);
+        node!.src = objectUrl;
+        node!.preload = "auto";
+        node!.load();
+      } catch (error) {
+        if (!request.signal.aborted) fallback();
+      }
+    }
+    void loadFilm();
+    return () => {
+      disposed = true;
+      request.abort();
+      node.removeEventListener("loadeddata", prime);
+      node.removeEventListener("canplay", prime);
+      node.removeEventListener("error", fallback);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [name, reduced, presentFrame]);
   useEffect(() => {
     const node = video.current;
     const host = node?.closest(section);
-    if (!node || !host || reduced) return;
-    // Start fetching the later film well before its section arrives. Cloudflare
-    // serves byte ranges correctly, but waiting until the section is only two
-    // screens away leaves too little time for the larger observatory film.
-    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) setNear(true); }, { rootMargin: "4800px 0px" });
-    observer.observe(host);
-    // IntersectionObserver can be delayed during a long smooth-scroll scene.
-    // The fallback makes the preload deterministic without competing with the
-    // hero film during the first moments of page load.
-    const warmup = window.setTimeout(() => setNear(true), idle ? 0 : 1800);
-    return () => { observer.disconnect(); window.clearTimeout(warmup); };
-  }, [section, reduced, idle]);
-  useEffect(() => {
-    const node = video.current;
-    const host = node?.closest(section);
-    if (!node || !host || !near || reduced || !ready) return;
+    if (!node || !host || reduced || !ready) return;
     let measureRaf = 0, easingRaf = 0, commitRaf = 0;
     let desired = node.currentTime || 0, displayed = desired, previous = performance.now();
     let busy = false, disposed = false, seekWatchdog = 0;
@@ -187,21 +234,11 @@ export function ScrollFilm({ name, section, reduced, idle = false }: Props) {
       document.removeEventListener("visibilitychange", visibilityChange);
       node.pause();
     };
-  }, [near, ready, reduced, section, presentFrame]);
+  }, [ready, reduced, section, presentFrame]);
   return <div className={"scroll-film" + (ready && !failed && !reduced ? " film-ready" : "")}>
     <img className="film-poster" src={asset(`/videos/${name}-poster.webp`)} alt="" width={1920} height={1080} fetchPriority={idle ? "high" : "auto"} />
     <canvas ref={canvas} className="film-video" aria-hidden="true" />
-    <video ref={video} className="film-decoder" muted playsInline preload={near && !reduced ? "auto" : "none"} aria-hidden="true" tabIndex={-1}
-      onError={(event) => {
-        const node = video.current;
-        // Ignore errors dispatched by an individual <source>. The browser may
-        // still have selected and decoded the other responsive source.
-        if (!node || event.target !== node || !node.error) return;
-        if (node && near && !reduced && retries.current < 2) { retries.current += 1; window.setTimeout(() => node.load(), 250 * retries.current); }
-        else setFailed(true);
-      }}>
-      {near && !reduced && <><source media="(max-width: 700px)" src={asset(`/videos/${name}-mobile.mp4`)} type="video/mp4" /><source src={asset(`/videos/${name}.mp4`)} type="video/mp4" /></>}
-    </video>
+    <video ref={video} className="film-decoder" muted playsInline preload="auto" aria-hidden="true" tabIndex={-1} />
   </div>;
 }
 
